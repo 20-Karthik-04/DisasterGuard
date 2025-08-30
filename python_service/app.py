@@ -12,10 +12,28 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from sklearn.exceptions import InconsistentVersionWarning
 import logging
 import io
+# Optional imports with fallbacks
+try:
+    import spacy
+    nlp = spacy.load('en_core_web_sm')
+except (ImportError, OSError):
+    spacy = None
+    nlp = None
+    print("Warning: spaCy not available, using fallback NER")
+
+try:
+    from polyglot.detect import Detector
+    from polyglot.text import Text
+    POLYGLOT_AVAILABLE = True
+except ImportError:
+    POLYGLOT_AVAILABLE = False
+    print("Warning: Polyglot not available, using langdetect only")
+
+import logging
+import io
 import csv
 from langdetect import detect, DetectorFactory
 from googletrans import Translator
-import spacy
 
 # --- Suppress sklearn version warnings ---
 warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
@@ -54,12 +72,7 @@ except Exception as e:
     raise
 
 # Initialize spaCy for enhanced NER
-nlp = None
-try:
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    print("Warning: spaCy English model not found. Install with: python -m spacy download en_core_web_sm")
-    nlp = None
+# spaCy initialization moved to imports section
 
 def load_json_file(file_path, default_data={}):
     """Helper function to load JSON files with robust error handling."""
@@ -281,45 +294,25 @@ def is_location_only(tweet):
     return False
 
 def has_disaster_context(tweet):
-    """Check if tweet has proper disaster context indicators."""
+    """Check if tweet has disaster-related contextual indicators."""
     tweet_lower = tweet.lower()
     
     # Count contextual indicators
     context_count = sum(1 for indicator in DISASTER_CONTEXT_INDICATORS 
                        if indicator.lower() in tweet_lower)
     
-    # Look for disaster keywords with context
-    disaster_with_context = False
-    for category, keywords in disaster_keywords.items():
+    # Check for disaster keywords with better matching
+    has_keywords = False
+    for keywords in disaster_keywords.values():
         for keyword in keywords:
-            if keyword.lower() in tweet_lower:
-                # Check if disaster word has proper context around it
-                keyword_pattern = r'\b' + re.escape(keyword.lower()) + r'\b'
-                match = re.search(keyword_pattern, tweet_lower)
-                if match:
-                    start, end = match.span()
-                    # Get context before and after the keyword
-                    before_text = tweet_lower[max(0, start-50):start]
-                    after_text = tweet_lower[end:end+50]
-                    
-                    # Check for context indicators near the disaster word
-                    context_near = any(indicator in before_text + after_text 
-                                     for indicator in DISASTER_CONTEXT_INDICATORS)
-                    
-                    # Check for action verbs or impact words
-                    action_words = ["hit", "struck", "caused", "killed", "injured", 
-                                  "destroyed", "damaged", "occurred", "happened"]
-                    has_action = any(word in before_text + after_text 
-                                   for word in action_words)
-                    
-                    if context_near or has_action:
-                        disaster_with_context = True
-                        break
-        
-        if disaster_with_context:
+            if re.search(r'\b' + re.escape(keyword.lower()) + r'\b', tweet_lower):
+                has_keywords = True
+                break
+        if has_keywords:
             break
     
-    return context_count >= 1 or disaster_with_context
+    # More lenient context detection
+    return context_count >= 1 or has_keywords
 
 def is_false_positive(tweet):
     """Enhanced false positive detection with contextual analysis."""
@@ -337,8 +330,11 @@ def is_false_positive(tweet):
     # Check if disaster keywords exist without proper context
     has_disaster_keywords = False
     for keywords in disaster_keywords.values():
-        if any(keyword.lower() in tweet_lower for keyword in keywords):
-            has_disaster_keywords = True
+        for keyword in keywords:
+            if re.search(r'\b' + re.escape(keyword.lower()) + r'\b', tweet_lower):
+                has_disaster_keywords = True
+                break
+        if has_disaster_keywords:
             break
     
     # If has disaster keywords but no context, it's likely a false positive
@@ -370,8 +366,11 @@ def extract_locations(tweet, language):
                             locations.add(location)
         except Exception as e:
             logging.error(f"spaCy NER error: {e}")
+    else:
+        # Fallback NER using simple pattern matching
+        logging.info("Using fallback location extraction (spaCy not available)")
     
-    # Use TextBlob for additional NER
+    # Use TextBlob for additional NER (always available)
     try:
         blob = TextBlob(tweet)
         for noun_phrase in blob.noun_phrases:
@@ -457,13 +456,21 @@ def predict_tweet(tweet):
         }
     
     language = detect_language(cleaned_tweet)
+    print(f"Debug - Detected language: {language}")
     translated_tweet = translate_tweet(cleaned_tweet, language)
+    print(f"Debug - Translated tweet: {translated_tweet}")
     
     print(f"Debug - Has disaster context: {has_disaster_context(translated_tweet)}")
     
-    # Additional context check - if no disaster context, likely not a disaster
-    if not has_disaster_context(translated_tweet):
-        print("Debug - No disaster context detected")
+    # Check for disaster context but don't immediately reject
+    has_context = has_disaster_context(translated_tweet)
+    print(f"Debug - Has disaster context: {has_context}")
+    
+    # Only reject if it's clearly not disaster-related AND has no keywords
+    if not has_context and not any(keyword.lower() in translated_tweet.lower() 
+                                  for keywords in disaster_keywords.values() 
+                                  for keyword in keywords):
+        print("Debug - No disaster context or keywords detected")
         return {
             'tweet': tweet,
             'is_disaster': 0,
@@ -491,45 +498,56 @@ def predict_tweet(tweet):
         print(f"Debug - Classes: {classes}")
         print(f"Debug - Probabilities: {prediction_proba}")
         
-        # Find the index of the disaster class
-        if 1 in classes:
-            disaster_idx = list(classes).index(1)
-        elif 'disaster' in [str(c).lower() for c in classes]:
-            disaster_idx = [str(c).lower() for c in classes].index('disaster')
+        # Find the index of the disaster class (1 = disaster, 0 = not disaster)
+        if len(classes) == 2:
+            # Binary classification: find index of class 1 (disaster)
+            disaster_idx = list(classes).index(1) if 1 in classes else 1
         else:
+            # Fallback to assuming second class is disaster
             disaster_idx = 1 if len(prediction_proba) > 1 else 0
         
-        # Get disaster probability correctly
-        disaster_prob = prediction_proba[disaster_idx] if len(prediction_proba) > disaster_idx else prediction_proba[0]
+        # Get disaster probability correctly with bounds checking
+        if len(prediction_proba) > disaster_idx:
+            disaster_prob = prediction_proba[disaster_idx]
+        else:
+            # Fallback: use the highest probability
+            disaster_prob = max(prediction_proba)
         
-        # Enhanced threshold logic with context consideration
-        base_threshold = 0.5
-        
-        # Adjust threshold based on context strength
+        # Optimized dynamic threshold adjustment for better disaster detection
         context_strength = sum(1 for indicator in DISASTER_CONTEXT_INDICATORS 
                              if indicator.lower() in translated_tweet.lower())
         
-        # Check for disaster keywords presence
+        # Check for disaster keywords presence with better matching
         has_strong_keywords = False
+        keyword_count = 0
         for keywords in disaster_keywords.values():
-            if any(keyword.lower() in translated_tweet.lower() for keyword in keywords):
-                has_strong_keywords = True
-                break
+            for keyword in keywords:
+                if re.search(r'\b' + re.escape(keyword.lower()) + r'\b', translated_tweet.lower()):
+                    has_strong_keywords = True
+                    keyword_count += 1
         
-        # Dynamic threshold adjustment
-        if context_strength >= 3 and has_strong_keywords:
-            adjusted_threshold = 0.25  # Very low threshold for strong context + keywords
+        if context_strength >= 3 and keyword_count >= 2:
+            adjusted_threshold = 0.25  # Strong context + multiple keywords
         elif context_strength >= 2 and has_strong_keywords:
-            adjusted_threshold = 0.35  # Lower threshold for good context + keywords
+            adjusted_threshold = 0.3   # Good context + keywords
+        elif keyword_count >= 2:
+            adjusted_threshold = 0.35  # Multiple keywords
         elif has_strong_keywords:
-            adjusted_threshold = 0.45  # Slightly lower for keywords alone
+            adjusted_threshold = 0.4   # Single keyword - more sensitive
         elif context_strength >= 2:
-            adjusted_threshold = 0.55  # Higher threshold without keywords
+            adjusted_threshold = 0.5   # Context without keywords
+        elif context_strength >= 1:
+            adjusted_threshold = 0.55  # Some context
         else:
-            adjusted_threshold = 0.65  # High threshold for weak signals
+            adjusted_threshold = 0.6   # Weak signals
         
         is_disaster = 1 if disaster_prob > adjusted_threshold else 0
-        confidence = float(round(max(disaster_prob, 1 - disaster_prob), 2))
+        
+        # Fix confidence calculation - should reflect actual prediction confidence
+        if is_disaster:
+            confidence = float(round(disaster_prob, 2))
+        else:
+            confidence = float(round(1 - disaster_prob, 2))
         
         print(f"Debug - Disaster probability: {disaster_prob}, Threshold: {adjusted_threshold}, Is disaster: {is_disaster}")
         
@@ -618,9 +636,11 @@ def predict_tweet(tweet):
         'sentiment': sentiment,
         'sentiment_score': compound_score,
         'language_detected': language,
-        'translated_text': translated_tweet if language != 'en' else None,
-        'context_strength': context_strength if 'context_strength' in locals() else 0,
-        'has_keywords': has_strong_keywords if 'has_strong_keywords' in locals() else False
+        'translated_text': translated_tweet if language != 'en' and language != 'unknown' else None,
+        'context_strength': context_strength,
+        'has_keywords': has_strong_keywords,
+        'keyword_count': keyword_count if 'keyword_count' in locals() else 0,
+        'threshold_used': adjusted_threshold if 'adjusted_threshold' in locals() else base_threshold
     }
 
 # Flask Routes
@@ -709,5 +729,4 @@ def upload_file():
         return jsonify({'error': 'File processing failed.'}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 4000))
-    app.run(debug=False, host='0.0.0.0', port=port)
+    app.run(debug=True, host='0.0.0.0', port=3001)

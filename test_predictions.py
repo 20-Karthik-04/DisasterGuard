@@ -107,7 +107,7 @@ TEST_CASES = [
     }
 ]
 
-def test_prediction_api(base_url="http://127.0.0.1:4000"):
+def test_prediction_api(base_url="http://127.0.0.1:3001"):
     """Test the enhanced prediction API"""
     print("🧪 Testing Enhanced Disaster Prediction System")
     print("=" * 60)
@@ -215,12 +215,16 @@ def test_batch_prediction():
         "Earthquake in Delhi, buildings shaking",
         "Great movie, loved it!",
         "Flood warning for Mumbai issued",
+        "Traffic disaster on highway",
+        "Flood warning for Mumbai issued",
         "Traffic disaster on highway"
     ]
     
+    PYTHON_SERVICE_URL = "http://127.0.0.1:3001/analyze"
+    NODE_SERVICE_URL = "http://127.0.0.1:3000/api/predict/batch"
     try:
         response = requests.post(
-            "http://127.0.0.1:3000/api/predict/batch",
+            NODE_SERVICE_URL,
             json={"tweets": batch_tweets},
             timeout=60
         )

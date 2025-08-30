@@ -9,5 +9,3 @@ nltk==3.9.1
 textblob==0.17.1
 langdetect==1.0.9
 googletrans==4.0.0rc1
-spacy==3.7.2
-polyglot==16.7.4
