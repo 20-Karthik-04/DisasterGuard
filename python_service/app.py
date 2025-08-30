@@ -13,6 +13,9 @@ from sklearn.exceptions import InconsistentVersionWarning
 import logging
 import io
 import csv
+from langdetect import detect, DetectorFactory
+from googletrans import Translator
+import spacy
 
 # --- Suppress sklearn version warnings ---
 warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
@@ -33,6 +36,15 @@ try:
 except LookupError:
     nltk.download('vader_lexicon', quiet=True)
 
+try:
+    nltk.data.find('punkt')
+except LookupError:
+    nltk.download('punkt', quiet=True)
+
+# Initialize language detection and translation
+DetectorFactory.seed = 0  # For consistent language detection
+translator = Translator()
+
 # Initialize sentiment analysis
 try:
     sia = SentimentIntensityAnalyzer()
@@ -40,6 +52,14 @@ except Exception as e:
     logging.error(f"Failed to load NLP tools: {e}")
     print(f"CRITICAL ERROR: Failed to load NLP tools. Error: {e}")
     raise
+
+# Initialize spaCy for enhanced NER
+nlp = None
+try:
+    nlp = spacy.load("en_core_web_sm")
+except OSError:
+    print("Warning: spaCy English model not found. Install with: python -m spacy download en_core_web_sm")
+    nlp = None
 
 def load_json_file(file_path, default_data={}):
     """Helper function to load JSON files with robust error handling."""
@@ -182,29 +202,60 @@ def clean_tweet(tweet):
     return cleaned if cleaned else 'Empty'
 
 def detect_language(tweet):
-    """Simple language detection using TextBlob; defaults to English."""
+    """Enhanced language detection using langdetect with fallback to TextBlob."""
     try:
         if len(tweet.strip()) < 3:
             return 'en'
-        blob = TextBlob(tweet)
-        detected = blob.detect_language()
-        return detected if detected else 'en'
+        
+        # Primary detection using langdetect
+        detected = detect(tweet)
+        
+        # Map common language codes
+        language_mapping = {
+            'hi': 'hindi',
+            'bn': 'bengali', 
+            'te': 'telugu',
+            'ta': 'tamil',
+            'mr': 'marathi',
+            'gu': 'gujarati',
+            'kn': 'kannada',
+            'ml': 'malayalam',
+            'pa': 'punjabi',
+            'or': 'odia',
+            'as': 'assamese',
+            'ur': 'urdu'
+        }
+        
+        return language_mapping.get(detected, detected)
+        
     except Exception as e:
-        logging.warning(f"Language detection failed for tweet: '{tweet}'. Error: {e}")
-        return 'en'
+        # Fallback to TextBlob
+        try:
+            blob = TextBlob(tweet)
+            detected = blob.detect_language()
+            return detected if detected else 'en'
+        except Exception:
+            logging.warning(f"Language detection failed for tweet: '{tweet}'. Error: {e}")
+            return 'en'
 
 def translate_tweet(tweet, source_lang):
-    """Translates a tweet to English using TextBlob if not already in English."""
+    """Enhanced translation using Google Translate with fallback to TextBlob."""
     if source_lang == 'en' or not tweet or len(tweet.strip()) < 3:
         return tweet
     
     try:
-        blob = TextBlob(tweet)
-        translated = blob.translate(to='en')
-        return str(translated) if translated else tweet
+        # Primary translation using Google Translate
+        translated = translator.translate(tweet, dest='en')
+        return translated.text if translated and translated.text else tweet
     except Exception as e:
-        logging.error(f"Translation error for tweet: '{tweet}'. Error: {e}")
-        return tweet
+        # Fallback to TextBlob
+        try:
+            blob = TextBlob(tweet)
+            translated = blob.translate(to='en')
+            return str(translated) if translated else tweet
+        except Exception:
+            logging.error(f"Translation error for tweet: '{tweet}'. Error: {e}")
+            return tweet
 
 def is_location_only(tweet):
     """Check if tweet is just a location name without disaster context."""
@@ -299,10 +350,28 @@ def is_false_positive(tweet):
     return False
 
 def extract_locations(tweet, language):
-    """Location extraction using TextBlob NER and pattern matching."""
+    """Enhanced location extraction using spaCy NER, TextBlob, and pattern matching."""
     locations = set()
     
-    # Use TextBlob for basic NER
+    # Use spaCy for enhanced NER if available
+    if nlp:
+        try:
+            doc = nlp(tweet)
+            for ent in doc.ents:
+                if ent.label_ in ["GPE", "LOC"]:  # Geopolitical entities and locations
+                    # Check if it matches known locations
+                    for location in INDIAN_LOCATIONS:
+                        if location.lower() in ent.text.lower():
+                            locations.add(location)
+                    
+                    # Check aliases
+                    for alias, location in city_aliases.items():
+                        if alias.lower() in ent.text.lower():
+                            locations.add(location)
+        except Exception as e:
+            logging.error(f"spaCy NER error: {e}")
+    
+    # Use TextBlob for additional NER
     try:
         blob = TextBlob(tweet)
         for noun_phrase in blob.noun_phrases:
@@ -313,16 +382,32 @@ def extract_locations(tweet, language):
     except Exception as e:
         logging.error(f"TextBlob NER error: {e}")
     
-    # Check for location aliases
+    # Check for location aliases with word boundaries
     tweet_lower = tweet.lower()
     for alias, location in city_aliases.items():
         if re.search(r'\b' + re.escape(alias.lower()) + r'\b', tweet_lower):
             locations.add(location)
     
-    # Pattern matching for Indian locations
+    # Pattern matching for Indian locations with enhanced context
     for location in INDIAN_LOCATIONS:
-        if re.search(r'\b' + re.escape(location.lower()) + r'\b', tweet_lower, re.IGNORECASE):
+        pattern = r'\b' + re.escape(location.lower()) + r'\b'
+        if re.search(pattern, tweet_lower, re.IGNORECASE):
             locations.add(location)
+    
+    # Enhanced location detection for Indian states and cities
+    indian_location_patterns = [
+        r'\bin\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b',  # "in Delhi", "in West Bengal"
+        r'\bat\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b',  # "at Mumbai", "at Chennai"
+        r'\bfrom\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b'  # "from Bangalore"
+    ]
+    
+    for pattern in indian_location_patterns:
+        matches = re.finditer(pattern, tweet, re.IGNORECASE)
+        for match in matches:
+            potential_location = match.group(1)
+            for location in INDIAN_LOCATIONS:
+                if location.lower() == potential_location.lower():
+                    locations.add(location)
     
     return list(locations)
 
@@ -424,12 +509,24 @@ def predict_tweet(tweet):
         context_strength = sum(1 for indicator in DISASTER_CONTEXT_INDICATORS 
                              if indicator.lower() in translated_tweet.lower())
         
-        if context_strength >= 3:
-            adjusted_threshold = 0.3  # Lower threshold for strong context
+        # Check for disaster keywords presence
+        has_strong_keywords = False
+        for keywords in disaster_keywords.values():
+            if any(keyword.lower() in translated_tweet.lower() for keyword in keywords):
+                has_strong_keywords = True
+                break
+        
+        # Dynamic threshold adjustment
+        if context_strength >= 3 and has_strong_keywords:
+            adjusted_threshold = 0.25  # Very low threshold for strong context + keywords
+        elif context_strength >= 2 and has_strong_keywords:
+            adjusted_threshold = 0.35  # Lower threshold for good context + keywords
+        elif has_strong_keywords:
+            adjusted_threshold = 0.45  # Slightly lower for keywords alone
         elif context_strength >= 2:
-            adjusted_threshold = 0.4  # Moderate adjustment
+            adjusted_threshold = 0.55  # Higher threshold without keywords
         else:
-            adjusted_threshold = base_threshold
+            adjusted_threshold = 0.65  # High threshold for weak signals
         
         is_disaster = 1 if disaster_prob > adjusted_threshold else 0
         confidence = float(round(max(disaster_prob, 1 - disaster_prob), 2))
@@ -441,24 +538,71 @@ def predict_tweet(tweet):
         is_disaster = 0
         confidence = 0.0
     
-    # Determine disaster category
+    # Enhanced disaster category classification
     category = 'Unknown Category'
+    category_confidence = 0.0
+    
     if is_disaster:
+        category_scores = {}
+        tweet_lower = translated_tweet.lower()
+        
+        # Score each category based on keyword matches
         for cat, keywords in disaster_keywords.items():
-            if any(re.search(r'\b' + re.escape(word.lower()) + r'\b', 
-                           translated_tweet.lower()) for word in keywords):
-                category = cat.replace("_", " ").title()
-                break
-        if category == 'Unknown Category':
+            score = 0
+            for keyword in keywords:
+                if re.search(r'\b' + re.escape(keyword.lower()) + r'\b', tweet_lower):
+                    # Weight keywords differently based on specificity
+                    if len(keyword.split()) > 1:  # Multi-word keywords are more specific
+                        score += 2
+                    else:
+                        score += 1
+            
+            if score > 0:
+                category_scores[cat] = score
+        
+        # Select category with highest score
+        if category_scores:
+            best_category = max(category_scores.items(), key=lambda x: x[1])
+            category = best_category[0].replace("_", " ").title()
+            category_confidence = min(best_category[1] / 3.0, 1.0)  # Normalize confidence
+        else:
             category = 'General Disaster'
+            category_confidence = 0.5
     else:
         category = 'Not Disaster'
+        category_confidence = confidence
     
-    # Analyze sentiment
+    # Enhanced sentiment analysis with emotional context
     sentiment_scores = sia.polarity_scores(translated_tweet)
-    sentiment = ('Positive' if sentiment_scores['compound'] >= 0.05 
-                else 'Negative' if sentiment_scores['compound'] <= -0.05 
-                else 'Neutral')
+    compound_score = sentiment_scores['compound']
+    
+    # Enhanced sentiment classification with disaster context
+    if is_disaster:
+        # For disaster tweets, consider urgency and fear indicators
+        urgency_words = ['help', 'urgent', 'emergency', 'rescue', 'trapped', 'danger']
+        fear_words = ['scared', 'terrified', 'panic', 'afraid', 'worried', 'anxious']
+        
+        has_urgency = any(word in translated_tweet.lower() for word in urgency_words)
+        has_fear = any(word in translated_tweet.lower() for word in fear_words)
+        
+        if has_urgency or has_fear:
+            sentiment = 'Urgent/Fearful'
+        elif compound_score <= -0.3:
+            sentiment = 'Highly Negative'
+        elif compound_score <= -0.05:
+            sentiment = 'Negative'
+        elif compound_score >= 0.05:
+            sentiment = 'Concerned/Informative'
+        else:
+            sentiment = 'Neutral'
+    else:
+        # Standard sentiment for non-disaster tweets
+        if compound_score >= 0.05:
+            sentiment = 'Positive'
+        elif compound_score <= -0.05:
+            sentiment = 'Negative'
+        else:
+            sentiment = 'Neutral'
     
     # Extract locations with enhanced detection
     locations = extract_locations(translated_tweet, 'en')
@@ -468,8 +612,15 @@ def predict_tweet(tweet):
         'is_disaster': is_disaster,
         'confidence': confidence,
         'location': locations[0] if locations else 'Unknown',
+        'all_locations': locations,
         'category': category,
-        'sentiment': sentiment
+        'category_confidence': category_confidence,
+        'sentiment': sentiment,
+        'sentiment_score': compound_score,
+        'language_detected': language,
+        'translated_text': translated_tweet if language != 'en' else None,
+        'context_strength': context_strength if 'context_strength' in locals() else 0,
+        'has_keywords': has_strong_keywords if 'has_strong_keywords' in locals() else False
     }
 
 # Flask Routes
