@@ -1,12 +1,12 @@
 import os
 import pickle
-import spacy
 import re
 import nltk
 import json
 import warnings
 import langdetect
-from deep_translator import GoogleTranslator
+from googletrans import Translator
+from textblob import TextBlob
 from flask import Flask, render_template, request, jsonify, make_response
 from werkzeug.utils import secure_filename
 from flask_cors import CORS
@@ -15,9 +15,6 @@ from sklearn.exceptions import InconsistentVersionWarning
 import logging
 import io
 import csv
-from spacy.matcher import PhraseMatcher
-from spacy.tokens import Span
-from spacy.language import Language
 
 # --- Suppress sklearn version warnings ---
 warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
@@ -38,14 +35,13 @@ try:
 except LookupError:
     nltk.download('vader_lexicon', quiet=True)
 
-# Load NLP models and sentiment analyzer
+# Initialize translation and sentiment analysis
 try:
-    nlp_en = spacy.load("en_core_web_sm")
-    nlp_multi = spacy.load("xx_ent_wiki_sm")
+    translator = Translator()
     sia = SentimentIntensityAnalyzer()
 except Exception as e:
-    logging.error(f"Failed to load spaCy models or VADER: {e}")
-    print(f"CRITICAL ERROR: Failed to load NLP models. Error: {e}")
+    logging.error(f"Failed to load NLP tools: {e}")
+    print(f"CRITICAL ERROR: Failed to load NLP tools. Error: {e}")
     raise
 
 def load_json_file(file_path, default_data={}):
@@ -164,36 +160,6 @@ LOCATION_ONLY_PATTERNS = [
     r'^\s*(?:in|at|from|to)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?\s*$'  # Preposition + location
 ]
 
-def setup_enhanced_ner(nlp):
-    """Setup enhanced NER with Indian locations support."""
-    matcher = PhraseMatcher(nlp.vocab, attr="LOWER")
-    patterns = [nlp.make_doc(text) for text in INDIAN_LOCATIONS]
-    matcher.add("INDIAN_LOCATIONS", patterns)
-
-    @Language.component("indian_locations")
-    def indian_location_component(doc):
-        matches = matcher(doc)
-        spans = [Span(doc, start, end, label="GPE") for _, start, end in matches]
-
-        existing_spans = list(doc.ents)
-        all_spans = existing_spans + spans
-
-        # Remove overlapping spans
-        filtered_spans = []
-        for span in all_spans:
-            if not any(span.start < s.end and span.end > s.start for s in filtered_spans):
-                filtered_spans.append(span)
-
-        doc.ents = filtered_spans
-        return doc
-
-    if "indian_locations" not in nlp.pipe_names:
-        nlp.add_pipe("indian_locations", last=True)
-
-    return nlp
-
-# Setup enhanced NER for both models
-nlp_en = setup_enhanced_ner(nlp_en)
 
 def clean_tweet(tweet):
     """Cleans a tweet by removing URLs, hashtags, mentions, and special characters."""
@@ -234,8 +200,8 @@ def translate_tweet(tweet, source_lang):
         return tweet
     
     try:
-        translated = GoogleTranslator(source=source_lang, target='en').translate(tweet)
-        return translated if translated else tweet
+        translated = translator.translate(tweet, src=source_lang, dest='en')
+        return translated.text if translated and translated.text else tweet
     except Exception as e:
         logging.error(f"Translation error for tweet: '{tweet}'. Error: {e}")
         return tweet
@@ -333,18 +299,19 @@ def is_false_positive(tweet):
     return False
 
 def extract_locations(tweet, language):
-    """Enhanced location extraction with better Indian location support."""
-    nlp = nlp_en if language == 'en' else nlp_multi
+    """Location extraction using TextBlob NER and pattern matching."""
     locations = set()
     
+    # Use TextBlob for basic NER
     try:
-        doc = nlp(tweet)
-        # Extract named entities that are locations
-        for ent in doc.ents:
-            if ent.label_ in ["GPE", "LOC"]:
-                locations.add(ent.text.strip())
+        blob = TextBlob(tweet)
+        for noun_phrase in blob.noun_phrases:
+            # Check if noun phrase matches known locations
+            for location in INDIAN_LOCATIONS:
+                if location.lower() in noun_phrase.lower():
+                    locations.add(location)
     except Exception as e:
-        logging.error(f"spaCy location extraction error: {e}")
+        logging.error(f"TextBlob NER error: {e}")
     
     # Check for location aliases
     tweet_lower = tweet.lower()
@@ -352,7 +319,7 @@ def extract_locations(tweet, language):
         if re.search(r'\b' + re.escape(alias.lower()) + r'\b', tweet_lower):
             locations.add(location)
     
-    # Additional pattern matching for Indian locations
+    # Pattern matching for Indian locations
     for location in INDIAN_LOCATIONS:
         if re.search(r'\b' + re.escape(location.lower()) + r'\b', tweet_lower, re.IGNORECASE):
             locations.add(location)
