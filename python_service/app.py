@@ -33,7 +33,7 @@ import logging
 import io
 import csv
 from langdetect import detect, DetectorFactory
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 
 # --- Suppress sklearn version warnings ---
 warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
@@ -61,7 +61,6 @@ except LookupError:
 
 # Initialize language detection and translation
 DetectorFactory.seed = 0  # For consistent language detection
-translator = Translator()
 
 # Initialize sentiment analysis
 try:
@@ -252,14 +251,15 @@ def detect_language(tweet):
             return 'en'
 
 def translate_tweet(tweet, source_lang):
-    """Enhanced translation using Google Translate with fallback to TextBlob."""
+    """Enhanced translation using deep-translator with fallback to TextBlob."""
     if source_lang == 'en' or not tweet or len(tweet.strip()) < 3:
         return tweet
     
     try:
-        # Primary translation using Google Translate
-        translated = translator.translate(tweet, dest='en')
-        return translated.text if translated and translated.text else tweet
+        # Primary translation using deep-translator
+        translator = GoogleTranslator(source='auto', target='en')
+        translated = translator.translate(tweet)
+        return translated if translated else tweet
     except Exception as e:
         # Fallback to TextBlob
         try:
