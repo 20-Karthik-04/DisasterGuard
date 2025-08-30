@@ -1,12 +1,33 @@
-# Essential packages for Python 3.11 compatibility
-Flask==3.0.3
-Flask-CORS==4.0.0
-gunicorn==21.2.0
-numpy==1.24.4
-scikit-learn==1.3.2
-joblib==1.4.2
-nltk==3.8.1
-spacy==3.4.4
-langdetect==1.0.9
-requests==2.31.0
-deep-translator==1.11.4
+# Python 3.13 compatible packages with explicit setuptools
+setuptools>=70.0.0
+wheel>=0.42.0
+pip>=24.0
+
+# Web framework
+Flask==3.1.0
+Flask-CORS==5.0.0
+gunicorn==23.0.0
+Werkzeug==3.1.0
+
+# ML and data processing (Python 3.13 compatible)
+numpy>=1.26.0,<2.0.0
+scipy>=1.11.0
+scikit-learn>=1.4.0
+joblib>=1.3.0
+
+# NLP libraries
+nltk>=3.9
+requests>=2.32.0
+langdetect>=1.0.9
+
+# Translation
+deep-translator>=1.11.4
+
+# Minimal spaCy setup (will install dependencies automatically)
+spacy>=3.7.0
+
+# Additional required packages
+click>=8.1.0
+itsdangerous>=2.2.0
+Jinja2>=3.1.0
+MarkupSafe>=2.1.0
