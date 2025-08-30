@@ -4,8 +4,6 @@ import re
 import nltk
 import json
 import warnings
-import langdetect
-from googletrans import Translator
 from textblob import TextBlob
 from flask import Flask, render_template, request, jsonify, make_response
 from werkzeug.utils import secure_filename
@@ -35,9 +33,8 @@ try:
 except LookupError:
     nltk.download('vader_lexicon', quiet=True)
 
-# Initialize translation and sentiment analysis
+# Initialize sentiment analysis
 try:
-    translator = Translator()
     sia = SentimentIntensityAnalyzer()
 except Exception as e:
     logging.error(f"Failed to load NLP tools: {e}")
@@ -185,23 +182,26 @@ def clean_tweet(tweet):
     return cleaned if cleaned else 'Empty'
 
 def detect_language(tweet):
-    """Detects the language of the tweet; defaults to English on failure."""
+    """Simple language detection using TextBlob; defaults to English."""
     try:
         if len(tweet.strip()) < 3:
             return 'en'
-        return langdetect.detect(tweet)
+        blob = TextBlob(tweet)
+        detected = blob.detect_language()
+        return detected if detected else 'en'
     except Exception as e:
         logging.warning(f"Language detection failed for tweet: '{tweet}'. Error: {e}")
         return 'en'
 
 def translate_tweet(tweet, source_lang):
-    """Translates a tweet to English if it's not already in English."""
+    """Translates a tweet to English using TextBlob if not already in English."""
     if source_lang == 'en' or not tweet or len(tweet.strip()) < 3:
         return tweet
     
     try:
-        translated = translator.translate(tweet, src=source_lang, dest='en')
-        return translated.text if translated and translated.text else tweet
+        blob = TextBlob(tweet)
+        translated = blob.translate(to='en')
+        return str(translated) if translated else tweet
     except Exception as e:
         logging.error(f"Translation error for tweet: '{tweet}'. Error: {e}")
         return tweet
