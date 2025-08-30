@@ -1,0 +1,29 @@
+conda activate base
+conda deactivate
+
+
+--> first time
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python -m spacy download en_core_web_sm
+deactivate
+
+cd node_backend
+npm init -y
+npm install express cors axios
+
+--> every time
+cd python_service
+source venv/bin/activate
+python app.py
+deactivate
+
+cd node_backend
+node app.js
+
+check- where python
+
+
+pip install geonamescache flask nltk spacy scikit-learn
+python -m spacy download en_core_web_sm

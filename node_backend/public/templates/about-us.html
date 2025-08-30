@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Us - DisasterGuard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-dark: #3a0ca3;
+      --secondary: #4cc9f0;
+      --secondary-dark: #4895ef;
+      --accent: #f72585;
+      --neutral: #6c757d;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --success: #4caf50;
+      --alert: #ff9800;
+      --danger: #f44336;
+      --font-main: 'Poppins', sans-serif;
+      --font-mono: 'Roboto Mono', monospace;
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+      --shadow-inset: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+      --border-radius: 12px;
+      --border: 1px solid rgba(0, 0, 0, 0.08);
+      --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body, html {
+      height: 100%;
+      width: 100%;
+      font-family: var(--font-main);
+      background-color: #121212; /* Dark mode default */
+      color: #f5f5f5;
+      line-height: 1.6;
+      transition: var(--transition);
+    }
+
+    body.light-mode {
+      background-color: #f0f2f5; /* Lighter background for light mode */
+      color: var(--dark);
+    }
+
+    .light-mode .background-overlay {
+      background: linear-gradient(135deg, rgba(67, 97, 238, 0.05) 0%, rgba(76, 201, 240, 0.05) 100%);
+    }
+
+    .background-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(67, 97, 238, 0.1) 0%, rgba(76, 201, 240, 0.1) 100%);
+      z-index: -2;
+    }
+
+    .background-pattern {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(247, 37, 133, 0.03) 0%, transparent 20%),
+        radial-gradient(circle at 90% 80%, rgba(67, 97, 238, 0.03) 0%, transparent 20%),
+        radial-gradient(circle at 50% 50%, rgba(76, 201, 240, 0.03) 0%, transparent 30%);
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--spacing-md);
+      background-color: rgba(30, 30, 30, 0.98); /* Dark mode default */
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow-sm);
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 100;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .light-mode .header {
+      background-color: rgba(255, 255, 255, 0.98);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .logo-icon {
+      color: var(--primary);
+      font-size: 1.8rem;
+      transition: var(--transition);
+    }
+
+    .logo:hover .logo-icon {
+      transform: rotate(15deg);
+    }
+
+    .logo-text {
+      font-weight: 700;
+      font-size: 1.3rem;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: var(--spacing-lg);
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: rgba(255, 255, 255, 0.8);
+      font-weight: 500;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-radius: var(--border-radius);
+    }
+
+    .light-mode .nav-links a {
+      color: var(--neutral);
+    }
+
+    .nav-links a:hover {
+      color: var(--primary);
+      background-color: rgba(67, 97, 238, 0.1);
+    }
+
+    .nav-links a.active {
+      color: var(--primary);
+      font-weight: 600;
+      background-color: rgba(67, 97, 238, 0.1);
+    }
+
+    .nav-links a i {
+      font-size: 0.9rem;
+    }
+
+    #dark-mode-toggle {
+      background-color: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 1.3rem;
+      cursor: pointer;
+      transition: var(--transition);
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+
+    .light-mode #dark-mode-toggle {
+      color: var(--neutral);
+    }
+
+    #dark-mode-toggle:hover {
+      transform: rotate(15deg);
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .light-mode #dark-mode-toggle:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .main-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 120px var(--spacing-md) var(--spacing-xl);
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: var(--spacing-xl);
+      max-width: 800px;
+      padding: 0 var(--spacing-md);
+    }
+
+    .hero h1 {
+      font-size: 2.8rem;
+      margin-bottom: var(--spacing-md);
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      line-height: 1.2;
+      font-weight: 800;
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: var(--spacing-lg);
+      opacity: 0.9;
+    }
+
+    .light-mode .hero p {
+      color: var(--neutral);
+    }
+    
+    .footer {
+      text-align: center;
+      padding: var(--spacing-lg) var(--spacing-md);
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.9rem;
+      margin-top: auto;
+      width: 100%;
+      opacity: 0.8;
+    }
+
+    .light-mode .footer {
+      color: var(--neutral);
+    }
+    
+    /* ========================================= */
+    /* == NEW STYLES FOR ABOUT US PAGE CARDS  == */
+    /* ========================================= */
+
+    .content-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--spacing-lg);
+      justify-content: center;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    .card {
+      background: rgba(30, 30, 30, 0.98);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-md);
+      padding: var(--spacing-xl);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      flex: 1 1 300px;
+      max-width: 340px;
+      text-align: left;
+      transition: var(--transition);
+    }
+
+    .card:hover {
+      transform: translateY(-8px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .light-mode .card {
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .card h2 {
+      font-family: var(--font-main);
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: var(--spacing-md);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+    
+    .card h2 i {
+        color: var(--accent);
+        font-size: 1.2rem;
+        width: 24px;
+        text-align: center;
+    }
+
+    .card p {
+      font-size: 1rem;
+      line-height: 1.7;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .light-mode .card p {
+      color: var(--neutral);
+    }
+  </style>
+</head>
+<body class="dark-mode">
+  <div class="background-overlay"></div>
+  <div class="background-pattern"></div>
+
+  <header class="header">
+    <div class="logo">
+      <i class="fas fa-shield-alt logo-icon"></i>
+      <a href="/" style="text-decoration: none;"><span class="logo-text">DisasterGuard</span></a>
+    </div>
+    
+    <nav class="nav-links">
+      <a href="/"><i class="fas fa-home"></i> Home</a>
+      <a href="/motivation"><i class="fas fa-bolt"></i> Motivation</a>
+      <a href="/feedback"><i class="fas fa-comment"></i> Feedback</a>
+      <a href="/about-us" class="active"><i class="fas fa-users"></i> About Us</a>
+    </nav>
+    
+    <button id="dark-mode-toggle" title="Toggle light mode">
+      <i class="fas fa-sun"></i>
+    </button>
+  </header>
+
+  <main class="main-container">
+    <section class="hero">
+      <h1>About DisasterGuard</h1>
+      <p>Our project is dedicated to enhancing disaster resilience through the power of data. We believe that by understanding past events, we can build safer communities for the future.</p>
+    </section>
+
+    <div class="content-container">
+      <div class="card">
+        <h2><i class="fas fa-bullseye"></i> Our Mission</h2>
+        <p>
+          Our project focuses on leveraging historical and static data to provide insights that help communities and responders prepare for and mitigate the impact of natural disasters.
+        </p>
+      </div>
+
+      <div class="card">
+        <h2><i class="fas fa-cogs"></i> Technology & Approach</h2>
+        <p>
+          Our server utilizes machine learning and NLP to analyze social media data, historical reports, and structured datasets. By identifying patterns, we equip disaster management teams with data-driven tools.
+        </p>
+      </div>
+
+      <div class="card">
+        <h2><i class="fas fa-eye"></i> Our Vision</h2>
+        <p>
+          Through research and collaboration, we’re driven by a commitment to enhancing community resilience. By learning from the past, we aim to make a tangible difference in future disaster response efforts.
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <div class="footer">
+    <p>© 2025 DisasterGuard | Real-time Disaster Detection System</p>
+  </div>
+
+  <script>
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    
+    darkModeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('light-mode');
+      const isLightMode = document.body.classList.contains('light-mode');
+      darkModeToggle.querySelector('i').className = isLightMode ? 'fas fa-moon' : 'fas fa-sun';
+      localStorage.setItem('isLightMode', isLightMode);
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (localStorage.getItem('isLightMode') === 'true') {
+            document.body.classList.add('light-mode');
+            darkModeToggle.querySelector('i').className = 'fas fa-moon';
+        }
+    });
+  </script>
+</body>
+</html>

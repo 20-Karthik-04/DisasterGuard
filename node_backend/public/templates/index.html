@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DisasterGuard - Real-time Tweet Analysis</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-dark: #3a0ca3;
+      --secondary: #4cc9f0;
+      --secondary-dark: #4895ef;
+      --accent: #f72585;
+      --neutral: #6c757d;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --success: #4caf50;
+      --alert: #ff9800;
+      --danger: #f44336;
+      --font-main: 'Poppins', sans-serif;
+      --font-mono: 'Roboto Mono', monospace;
+      --spacing-xs: 0.25rem;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+      --shadow-inset: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+      --border-radius: 12px;
+      --border: 1px solid rgba(0, 0, 0, 0.08);
+      --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body, html {
+      height: 100%;
+      width: 100%;
+      font-family: var(--font-main);
+      background-color: #121212; /* Dark mode default */
+      color: #f5f5f5;
+      line-height: 1.6;
+      transition: var(--transition);
+    }
+
+    body.light-mode {
+      background-color: #f0f2f5; /* Lighter background for light mode */
+      color: var(--dark);
+    }
+
+    .light-mode .background-overlay {
+      background: linear-gradient(135deg, rgba(67, 97, 238, 0.05) 0%, rgba(76, 201, 240, 0.05) 100%);
+    }
+
+    .background-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(67, 97, 238, 0.1) 0%, rgba(76, 201, 240, 0.1) 100%);
+      z-index: -2;
+    }
+
+    .background-pattern {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(247, 37, 133, 0.03) 0%, transparent 20%),
+        radial-gradient(circle at 90% 80%, rgba(67, 97, 238, 0.03) 0%, transparent 20%),
+        radial-gradient(circle at 50% 50%, rgba(76, 201, 240, 0.03) 0%, transparent 30%);
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--spacing-md);
+      background-color: rgba(30, 30, 30, 0.98); /* Dark mode default */
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow-sm);
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 100;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .light-mode .header {
+      background-color: rgba(255, 255, 255, 0.98);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .logo-icon {
+      color: var(--primary);
+      font-size: 1.8rem;
+      transition: var(--transition);
+    }
+
+    .logo:hover .logo-icon {
+      transform: rotate(15deg);
+    }
+
+    .logo-text {
+      font-weight: 700;
+      font-size: 1.3rem;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: var(--spacing-lg);
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: rgba(255, 255, 255, 0.8);
+      font-weight: 500;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-radius: var(--border-radius);
+    }
+
+    .light-mode .nav-links a {
+      color: var(--neutral);
+    }
+
+    .nav-links a:hover {
+      color: var(--primary);
+      background-color: rgba(67, 97, 238, 0.1);
+    }
+
+    .nav-links a.active {
+      color: var(--primary);
+      font-weight: 600;
+      background-color: rgba(67, 97, 238, 0.1);
+    }
+
+    .nav-links a i {
+      font-size: 0.9rem;
+    }
+
+    #dark-mode-toggle {
+      background-color: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 1.3rem;
+      cursor: pointer;
+      transition: var(--transition);
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+
+    .light-mode #dark-mode-toggle {
+      color: var(--neutral);
+    }
+
+    #dark-mode-toggle:hover {
+      transform: rotate(15deg);
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .light-mode #dark-mode-toggle:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .main-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 120px var(--spacing-md) var(--spacing-xl);
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: var(--spacing-xl);
+      max-width: 800px;
+      padding: 0 var(--spacing-md);
+    }
+
+    .hero h1 {
+      font-size: 2.8rem;
+      margin-bottom: var(--spacing-md);
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      line-height: 1.2;
+      font-weight: 800;
+    }
+
+    .hero p {
+      font-size: 1.2rem;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: var(--spacing-lg);
+      opacity: 0.9;
+    }
+
+    .light-mode .hero p {
+      color: var(--neutral);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background: rgba(30, 30, 30, 0.98); /* Dark mode default */
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-lg);
+      padding: var(--spacing-xl);
+      transition: var(--transition);
+      margin-bottom: var(--spacing-xl);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .light-mode .container {
+      background: rgba(255, 255, 255, 0.98);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .container-title {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      margin-bottom: var(--spacing-lg);
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .light-mode .container-title {
+      color: var(--neutral);
+    }
+
+    .container-title i {
+      color: var(--primary);
+      font-size: 1.8rem;
+    }
+
+    .form-group {
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: var(--spacing-sm);
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+
+    .light-mode .form-group label {
+      color: var(--neutral);
+    }
+
+    .input-with-icon {
+      position: relative;
+    }
+
+    .input-with-icon i {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--neutral);
+      opacity: 0.7;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 14px 15px 14px 45px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--border-radius);
+      font-size: 16px;
+      font-family: var(--font-main);
+      background-color: rgba(255, 255, 255, 0.05);
+      transition: var(--transition);
+      box-shadow: var(--shadow-inset);
+      color: #f5f5f5;
+    }
+
+    .light-mode input[type="text"] {
+      background-color: rgba(0, 0, 0, 0.02);
+      border-color: rgba(0, 0, 0, 0.08);
+      color: var(--dark);
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .light-mode input[type="text"]:focus {
+      background-color: white;
+    }
+
+    input[type="text"]::placeholder {
+      color: #777;
+      font-style: italic;
+    }
+
+    .light-mode input[type="text"]::placeholder {
+      color: #aaa;
+    }
+
+    .btn {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--spacing-sm);
+      box-shadow: var(--shadow-md);
+      letter-spacing: 0.5px;
+    }
+
+    .btn:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+    
+    .btn-accent {
+      background-color: var(--accent);
+      box-shadow: 0 4px 12px rgba(247, 37, 133, 0.3);
+    }
+
+    .btn-accent:hover {
+      background-color: #f50057;
+      box-shadow: 0 6px 16px rgba(247, 37, 133, 0.4);
+    }
+
+    .result {
+      margin-top: var(--spacing-lg);
+      padding: var(--spacing-lg);
+      border-radius: var(--border-radius);
+      background-color: rgba(67, 97, 238, 0.1);
+      border-left: 4px solid var(--primary);
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.5s ease-in, opacity 0.5s ease-in;
+      opacity: 0;
+    }
+
+    .light-mode .result {
+      background-color: rgba(67, 97, 238, 0.05);
+      border-left-color: var(--primary);
+    }
+
+    .result.show {
+      max-height: 1000px; /* Increased to fit all content */
+      opacity: 1;
+    }
+
+    .result h3 {
+      margin-bottom: var(--spacing-md);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      color: var(--primary);
+    }
+
+    .result-item {
+      margin-bottom: var(--spacing-sm);
+      display: flex;
+      flex-wrap: wrap; /* Allow wrapping on small screens */
+      gap: var(--spacing-sm);
+      padding: var(--spacing-sm) 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .light-mode .result-item {
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .result-item:last-child {
+      border-bottom: none;
+    }
+
+    .result-label {
+      font-weight: 600;
+      min-width: 120px; /* Adjusted width */
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .light-mode .result-label {
+      color: var(--neutral);
+    }
+
+    .result-value {
+      flex: 1;
+      font-weight: 500;
+      word-break: break-word; /* Break long words */
+    }
+
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .status-safe {
+      background-color: rgba(76, 175, 80, 0.15);
+      color: var(--success);
+    }
+
+    .status-danger {
+      background-color: rgba(244, 67, 54, 0.15);
+      color: var(--danger);
+    }
+
+    .footer {
+      text-align: center;
+      padding: var(--spacing-lg) var(--spacing-md);
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.9rem;
+      margin-top: auto;
+      width: 100%;
+      opacity: 0.8;
+    }
+
+    .light-mode .footer {
+      color: var(--neutral);
+    }
+
+    @media (max-width: 768px) {
+      .hero h1 {
+        font-size: 2.2rem;
+      }
+      
+      .nav-links {
+        display: none;
+      }
+      
+      .container {
+        padding: var(--spacing-lg);
+      }
+    }
+
+    .loader {
+      display: none;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top: 4px solid var(--primary);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    
+    .light-mode .loader {
+        border-color: rgba(0, 0, 0, 0.1);
+        border-top-color: var(--primary);
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="dark-mode">
+  <div class="background-overlay"></div>
+  <div class="background-pattern"></div>
+
+  <header class="header">
+    <div class="logo">
+      <i class="fas fa-shield-alt logo-icon"></i>
+      <span class="logo-text">DisasterGuard</span>
+    </div>
+    
+    <nav class="nav-links">
+      <a href="/" class="active"><i class="fas fa-home"></i> Home</a>
+      <a href="/motivation"><i class="fas fa-bolt"></i> Motivation</a>
+      <a href="/feedback"><i class="fas fa-comment"></i> Feedback</a>
+      <a href="/about-us"><i class="fas fa-users"></i> About Us</a>
+    </nav>
+    
+    <button id="dark-mode-toggle" title="Toggle light mode">
+      <i class="fas fa-sun"></i>
+    </button>
+  </header>
+
+  <main class="main-container">
+    <section class="hero">
+      <h1>Real-time Disaster Tweet Analysis</h1>
+      <p>Identify critical disaster information from social media posts in real-time. Our AI-powered system analyzes text to detect emergencies, categorize events, and provide actionable insights.</p>
+    </section>
+    
+    <div class="container">
+      <div class="container-title">
+        <i class="fas fa-bolt"></i>
+        <h2>Analyze Disaster-Related Text</h2>
+      </div>
+      
+      <form id="prediction-form" onsubmit="return false;">
+        <div class="form-group">
+          <label for="tweet"><i class="fas fa-comment-dots"></i> Enter Text Content</label>
+          <div class="input-with-icon">
+            <i class="fas fa-pencil-alt"></i>
+            <input type="text" name="tweet" id="tweet-input" placeholder="Type or paste the text here..." required>
+          </div>
+        </div>
+        
+        <button type="button" class="btn" id="analyze-btn">
+          <i class="fas fa-search"></i> Analyze Text
+        </button>
+      </form>
+      
+      <div class="loader" id="loader"></div>
+      
+      <div class="result" id="result">
+        <h3><i class="fas fa-chart-pie"></i> Analysis Results</h3>
+        
+        <div class="result-item">
+          <span class="result-label">Original Text:</span>
+          <span class="result-value" id="tweet-text">-</span>
+        </div>
+        
+        <div class="result-item">
+          <span class="result-label">Disaster Related:</span>
+          <span class="result-value" id="is-disaster">-</span>
+        </div>
+        
+        <div class="result-item">
+          <span class="result-label">Confidence:</span>
+          <span class="result-value" id="confidence">-</span>
+        </div>
+        
+        <div class="result-item">
+          <span class="result-label">Location:</span>
+          <span class="result-value" id="location">-</span>
+        </div>
+        
+        <div class="result-item">
+          <span class="result-label">Category:</span>
+          <span class="result-value" id="category">-</span>
+        </div>
+        
+        <div class="result-item">
+          <span class="result-label">Sentiment:</span>
+          <span class="result-value" id="sentiment">-</span>
+        </div>
+
+        
+        <button class="btn btn-accent" id="report-button" style="margin-top: 20px; display: none;">
+          <i class="fas fa-flag"></i> Report to Authorities
+        </button>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <p>© 2025 DisasterGuard | Real-time Disaster Detection System</p>
+    </div>
+  </main>
+
+  <!-- SCRIPT SECTION: Connects to the Flask backend -->
+  <script>
+    // DOM Elements
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    const resultDiv = document.getElementById('result');
+    const loader = document.getElementById('loader');
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const tweetInput = document.getElementById('tweet-input');
+    const reportButton = document.getElementById('report-button');
+
+    // --- Main Prediction Function ---
+    async function predict() {
+      const tweetText = tweetInput.value;
+      
+      if (!tweetText.trim()) {
+        alert('Please enter text to analyze.');
+        return;
+      }
+      
+      loader.style.display = 'block';
+      resultDiv.classList.remove('show');
+      analyzeBtn.disabled = true;
+      analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+
+      try {
+        // =================================================================================
+        // CRITICAL FIX: Use environment-aware URL for the Python microservice
+        // =================================================================================
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+          ? 'http://localhost:4000' 
+          : 'https://your-python-service-url.onrender.com';
+        
+        const response = await fetch(`${API_BASE_URL}/analyze`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tweet: tweetText }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || `HTTP error! status: ${response.status}`);
+        }
+        
+        displayResults(data);
+
+      } catch (error) {
+        console.error('Error:', error);
+        alert(`Failed to analyze text: ${error.message}`);
+        resultDiv.classList.remove('show');
+      } finally {
+        loader.style.display = 'none';
+        analyzeBtn.disabled = false;
+        analyzeBtn.innerHTML = '<i class="fas fa-search"></i> Analyze Text';
+      }
+    }
+
+    // --- Function to display results in the UI ---
+    function displayResults(data) {
+        document.getElementById('tweet-text').innerText = data.tweet || '-';
+        
+        const isDisasterSpan = document.getElementById('is-disaster');
+        if (data.is_disaster) {
+            isDisasterSpan.innerHTML = '<span class="status-indicator status-danger">Yes, Disaster Related</span>';
+            reportButton.style.display = 'inline-flex';
+        } else {
+            isDisasterSpan.innerHTML = '<span class="status-indicator status-safe">No, Not a Disaster</span>';
+            reportButton.style.display = 'none';
+        }
+
+        const confidence = document.getElementById('confidence');
+        confidence.innerText = typeof data.confidence === 'number' ? `${(data.confidence * 100).toFixed(0)}%` : 'N/A';
+
+        document.getElementById('location').innerText = data.location || 'Unknown';
+        document.getElementById('category').innerText = data.category || 'Unknown';
+        document.getElementById('sentiment').innerText = data.sentiment || 'Unknown';
+
+
+        resultDiv.classList.add('show');
+    }
+
+    // --- Event Listeners ---
+    analyzeBtn.addEventListener('click', predict);
+    tweetInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            predict();
+        }
+    });
+    reportButton.addEventListener('click', () => alert('Notified to the authorities. Thank you'));
+    
+    darkModeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('light-mode');
+      const isLightMode = document.body.classList.contains('light-mode');
+      darkModeToggle.querySelector('i').className = isLightMode ? 'fas fa-moon' : 'fas fa-sun';
+      localStorage.setItem('isLightMode', isLightMode);
+    });
+
+    // --- Page Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        if (localStorage.getItem('isLightMode') === 'true') {
+            document.body.classList.add('light-mode');
+            darkModeToggle.querySelector('i').className = 'fas fa-moon';
+        }
+    });
+  </script>
+</body>
+</html>

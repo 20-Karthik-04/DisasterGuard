@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Our Motivation - DisasterGuard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css"/>
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css"/>
+
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-dark: #3a0ca3;
+      --secondary: #4cc9f0;
+      --secondary-dark: #4895ef;
+      --accent: #f72585;
+      --neutral: #6c757d;
+      --light: #f8f9fa;
+      --dark: #212529;
+      --font-main: 'Poppins', sans-serif;
+      --spacing-sm: 0.5rem;
+      --spacing-md: 1rem;
+      --spacing-lg: 1.5rem;
+      --spacing-xl: 2rem;
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+      --border-radius: 12px;
+      --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body, html {
+      height: 100%;
+      width: 100%;
+      font-family: var(--font-main);
+      background-color: #121212;
+      color: #f5f5f5;
+      line-height: 1.6;
+      transition: var(--transition);
+      overflow-x: hidden;
+    }
+
+    body.light-mode {
+      background-color: #f0f2f5;
+      color: var(--dark);
+    }
+
+    .light-mode .background-overlay {
+      background: linear-gradient(135deg, rgba(67, 97, 238, 0.05) 0%, rgba(76, 201, 240, 0.05) 100%);
+    }
+
+    .background-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(135deg, rgba(67, 97, 238, 0.1) 0%, rgba(76, 201, 240, 0.1) 100%);
+      z-index: -2;
+    }
+
+    .background-pattern {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(247, 37, 133, 0.03) 0%, transparent 20%),
+        radial-gradient(circle at 90% 80%, rgba(67, 97, 238, 0.03) 0%, transparent 20%);
+      z-index: -1; pointer-events: none;
+    }
+
+    .header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: var(--spacing-md); background-color: rgba(30, 30, 30, 0.98);
+      backdrop-filter: blur(10px); box-shadow: var(--shadow-sm);
+      position: fixed; top: 0; left: 0; width: 100%; z-index: 100;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .light-mode .header {
+      background-color: rgba(255, 255, 255, 0.98);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .logo { display: flex; align-items: center; gap: var(--spacing-sm); }
+    .logo-icon { color: var(--primary); font-size: 1.8rem; transition: var(--transition); }
+    .logo:hover .logo-icon { transform: rotate(15deg); }
+    .logo-text { font-weight: 700; font-size: 1.3rem; background: linear-gradient(to right, var(--primary), var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: -0.5px; }
+    
+    .nav-links { display: flex; gap: var(--spacing-lg); }
+    .nav-links a { text-decoration: none; color: rgba(255, 255, 255, 0.8); font-weight: 500; transition: var(--transition); display: flex; align-items: center; gap: var(--spacing-xs); padding: var(--spacing-sm) var(--spacing-md); border-radius: var(--border-radius); }
+    .light-mode .nav-links a { color: var(--neutral); }
+    .nav-links a:hover { color: var(--primary); background-color: rgba(67, 97, 238, 0.1); }
+    .nav-links a.active { color: var(--primary); font-weight: 600; background-color: rgba(67, 97, 238, 0.1); }
+    .nav-links a i { font-size: 0.9rem; }
+    
+    #dark-mode-toggle { background-color: transparent; border: none; color: rgba(255, 255, 255, 0.8); font-size: 1.3rem; cursor: pointer; transition: var(--transition); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+    .light-mode #dark-mode-toggle { color: var(--neutral); }
+    #dark-mode-toggle:hover { transform: rotate(15deg); background-color: rgba(255, 255, 255, 0.1); }
+    .light-mode #dark-mode-toggle:hover { background-color: rgba(0, 0, 0, 0.05); }
+
+    .main-container { display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 120px var(--spacing-md) var(--spacing-xl); max-width: 1200px; margin: 0 auto; }
+    .hero { text-align: center; margin-bottom: var(--spacing-lg); max-width: 800px; padding: 0 var(--spacing-md); }
+    .hero h1 { font-size: 2.8rem; margin-bottom: var(--spacing-md); background: linear-gradient(to right, var(--primary), var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.2; font-weight: 800; }
+    .hero p { font-size: 1.2rem; color: rgba(255, 255, 255, 0.7); opacity: 0.9; }
+    .light-mode .hero p { color: var(--neutral); }
+    
+    .footer { text-align: center; padding: var(--spacing-lg) var(--spacing-md); color: rgba(255, 255, 255, 0.6); font-size: 0.9rem; margin-top: auto; width: 100%; opacity: 0.8; }
+    .light-mode .footer { color: var(--neutral); }
+
+    /* ======================================= */
+    /* == NEW STYLES FOR MOTIVATION CAROUSEL == */
+    /* ======================================= */
+
+    .motivation-timeline {
+      width: 100%;
+      position: relative;
+      margin-top: var(--spacing-lg);
+    }
+    
+    /* Navigation Bar */
+    .timeline-nav {
+      padding-bottom: var(--spacing-md);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      margin-bottom: var(--spacing-lg);
+    }
+    .light-mode .timeline-nav {
+      border-bottom-color: rgba(0, 0, 0, 0.1);
+    }
+
+    .timeline-nav .slick-slide {
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .timeline-nav__item {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.5);
+      transition: var(--transition);
+      position: relative;
+      padding-bottom: var(--spacing-md);
+      outline: none;
+    }
+    .light-mode .timeline-nav__item {
+      color: var(--neutral);
+    }
+    
+    .timeline-nav__item::before {
+      content: "";
+      position: absolute;
+      bottom: -6px; left: 50%; transform: translateX(-50%);
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.3);
+      border: 2px solid #121212;
+      transition: var(--transition);
+    }
+    .light-mode .timeline-nav__item::before {
+      background-color: rgba(0, 0, 0, 0.3);
+      border-color: #f0f2f5;
+    }
+
+    .timeline-nav__item.slick-current {
+      color: var(--primary);
+    }
+    .timeline-nav__item.slick-current::before {
+      background-color: var(--primary);
+      transform: translateX(-50%) scale(1.2);
+    }
+    
+    /* Main Slider */
+    .timeline-slider .slick-list {
+      overflow: visible;
+    }
+
+    .timeline-slide {
+      height: 550px;
+      position: relative;
+      background-size: cover;
+      background-position: center;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-lg);
+      outline: none;
+      transition: transform 0.5s ease;
+    }
+    .timeline-slide:not(.slick-current) {
+        transform: scale(0.9);
+    }
+    .slick-current.timeline-slide {
+        transform: scale(1);
+    }
+
+    .timeline-slide::after {
+      content: '';
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: linear-gradient(to top, rgba(18, 18, 18, 0.9), rgba(18, 18, 18, 0.1));
+      border-radius: var(--border-radius);
+      transition: var(--transition);
+      z-index: 1;
+    }
+    .light-mode .timeline-slide::after {
+        background: linear-gradient(to top, rgba(240, 242, 245, 0.9), rgba(240, 242, 245, 0.1));
+    }
+    .slick-current.timeline-slide::after {
+      opacity: 0.8;
+    }
+
+    .timeline-year {
+      position: absolute; top: var(--spacing-lg); left: var(--spacing-lg);
+      font-size: 1.5rem; font-weight: 700;
+      color: white;
+      background-color: var(--accent);
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-radius: var(--border-radius);
+      z-index: 2;
+      box-shadow: var(--shadow-md);
+    }
+    
+    .timeline-slide__content {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      padding: var(--spacing-xl);
+      z-index: 2;
+      color: white;
+    }
+
+    .timeline-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: var(--spacing-sm);
+      color: #ffffff;
+    }
+    
+    .timeline-text {
+      font-size: 1.1rem;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.9);
+      max-width: 90%;
+    }
+  </style>
+</head>
+<body class="dark-mode">
+  <div class="background-overlay"></div>
+  <div class="background-pattern"></div>
+
+  <header class="header">
+    <div class="logo">
+      <i class="fas fa-shield-alt logo-icon"></i>
+      <a href="/" style="text-decoration: none;"><span class="logo-text">DisasterGuard</span></a>
+    </div>
+    
+    <nav class="nav-links">
+      <a href="/"><i class="fas fa-home"></i> Home</a>
+      <a href="/motivation" class="active"><i class="fas fa-bolt"></i> Motivation</a>
+      <a href="/feedback"><i class="fas fa-comment"></i> Feedback</a>
+      <a href="/about-us"><i class="fas fa-users"></i> About Us</a>
+    </nav>
+    
+    <button id="dark-mode-toggle" title="Toggle light mode">
+      <i class="fas fa-sun"></i>
+    </button>
+  </header>
+
+  <main class="main-container">
+    <section class="hero">
+      <h1>Our Motivation</h1>
+      <p>The history of natural disasters serves as a powerful reminder of the urgent need for better preparedness and response. These events motivate our work to harness technology for safeguarding communities.</p>
+    </section>
+
+    <div class="motivation-timeline">
+      <div class="timeline-nav">
+        <div class="timeline-nav__item">2001</div>
+        <div class="timeline-nav__item">2004</div>
+        <div class="timeline-nav__item">2005</div>
+        <div class="timeline-nav__item">2008</div>
+        <div class="timeline-nav__item">2010</div>
+        <div class="timeline-nav__item">2013</div>
+        <div class="timeline-nav__item">2015</div>
+        <div class="timeline-nav__item">2018</div>
+        <div class="timeline-nav__item">2020</div>
+        <div class="timeline-nav__item">2023</div>
+      </div>
+      <div class="timeline-slider">
+          <div class="timeline-slide" style="background-image: url('https://data1.ibtimes.co.in/cache-img-640-0/en/full/557801/1422207180_2001-gujarat-earthquake.jpg');">
+            <div class="timeline-slide__content">
+              <h4 class="timeline-title">Gujarat Earthquake</h4>
+              <p class="timeline-text">A devastating earthquake that resulted in thousands of deaths and highlighted vulnerabilities in urban infrastructure.</p>
+            </div>
+          </div>
+          <div class="timeline-slide" style="background-image: url('https://english.cdn.zeenews.com/sites/default/files/2022/12/26/1133895-tsunami-18-years-explain.jpg');">
+            <div class="timeline-slide__content">
+              <h4 class="timeline-title">Indian Ocean Tsunami</h4>
+              <p class="timeline-text">A catastrophic event that underscored the need for international cooperation and effective early warning systems.</p>
+            </div>
+          </div>
+          <div class="timeline-slide" style="background-image: url('https://th.bing.com/th/id/OIP.uQxVwMN7qxeRkJ5muNqi3AHaEo?rs=1&pid=ImgDetMain');">
+            <div class="timeline-slide__content">
+              <h4 class="timeline-title">Hurricane Katrina</h4>
+              <p class="timeline-text">Exposed critical flaws in disaster response and urban planning, leading to widespread flooding and displacement.</p>
+            </div>
+          </div>
+          <div class="timeline-slide" style="background-image: url('https://th.bing.com/th/id/OIP.brwZ2ULbZNen29rgFwYyLwHaE8?rs=1&pid=ImgDetMain');">
+            <div class="timeline-slide__content">
+              <h4 class="timeline-title">Cyclone Nargis</h4>
+              <p class="timeline-text">A powerful cyclone that revealed the dire consequences of inadequate disaster warning and preparedness in vulnerable nations.</p>
+            </div>
+          </div>
+          <div class="timeline-slide" style="background-image: url('https://media.npr.org/assets/img/2020/01/09/gilkey-haiti-0-19_custom-8b83129530c2e1dcbc28aab84a7f64b9f8ce00d4.jpg');">
+            <div class="timeline-slide__content">
+              <h4 class="timeline-title">Haiti Earthquake</h4>
+              <p class="timeline-text">Caused immense destruction, highlighting the vulnerabilities of densely populated urban areas during seismic events.</p>
+            </div>
+          </div>
+          <div class="timeline-slide" style="background-image: url('https://images.hindustantimes.com/img/2021/10/19/1600x900/824f60d2-3104-11ec-b4d0-e328c23f8ca7_1634665672336.jpg');">
+            <div class="timeline-slide__content">
+              <h4 class="timeline-title">Uttarakhand Floods</h4>
+              <p class="timeline-text">Showcased the catastrophic potential of flash floods in mountainous regions, stressing the need for real-time monitoring.</p>
+            </div>
+          </div>
+          <div class="timeline-slide" style="background-image: url('https://images.huffingtonpost.com/2015-04-28-1430238899-3429155-UNI183561.jpg');">
+            <div class="timeline-slide__content">
+              <h4 class="timeline-title">Nepal Earthquake</h4>
+              <p class="timeline-text">A major earthquake that emphasized the critical importance of resilient infrastructure in seismically active regions.</p>
+            </div>
+          </div>
+          <div class="timeline-slide" style="background-image: url('https://d.newsweek.com/en/full/1079433/gettyimages-1018784632.jpg');">
+            <div class="timeline-slide__content">
+              <h4 class="timeline-title">Kerala Floods</h4>
+              <p class="timeline-text">Demonstrated the growing threat of extreme weather events and the necessity of advanced flood prediction systems.</p>
+            </div>
+          </div>
+          <div class="timeline-slide" style="background-image: url('https://ichef.bbci.co.uk/news/800/cpsprodpb/8153/production/_110370133_gettyimages-1191130683.jpg');">
+            <div class="timeline-slide__content">
+              <h4 class="timeline-title">Australian Bushfires</h4>
+              <p class="timeline-text">Caused unprecedented destruction, raising global awareness about the escalating impact of climate-driven disasters.</p>
+            </div>
+          </div>
+          <div class="timeline-slide" style="background-image: url('https://www.sendrelief.org/wp-content/uploads/sites/16/2023/02/GettyImages-1246842577-scaled.jpg');">
+            <div class="timeline-slide__content">
+              <h4 class="timeline-title">Turkey-Syria Earthquake</h4>
+              <p class="timeline-text">A powerful quake that once again highlighted the global need for advanced relief mechanisms and earthquake preparedness.</p>
+            </div>
+          </div>
+      </div>
+    </div>
+  </main>
+  
+  <div class="footer">
+    <p>© 2025 DisasterGuard | Real-time Disaster Detection System</p>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
+  
+  <script>
+    // --- Dark Mode Toggle ---
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
+    darkModeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('light-mode');
+      const isLightMode = document.body.classList.contains('light-mode');
+      darkModeToggle.querySelector('i').className = isLightMode ? 'fas fa-moon' : 'fas fa-sun';
+      localStorage.setItem('isLightMode', isLightMode);
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (localStorage.getItem('isLightMode') === 'true') {
+            document.body.classList.add('light-mode');
+            darkModeToggle.querySelector('i').className = 'fas fa-moon';
+        }
+    });
+
+    // --- Slick Carousel Initialization ---
+    $(function(){
+      $('.timeline-nav').slick({
+         slidesToShow: 10,
+         slidesToScroll: 1,
+         asNavFor: '.timeline-slider',
+         centerMode: true,
+         focusOnSelect: true,
+         arrows: false,
+         infinite: false,
+         responsive: [
+            { breakpoint: 1024, settings: { slidesToShow: 8 } },
+            { breakpoint: 768, settings: { slidesToShow: 5 } },
+            { breakpoint: 480, settings: { slidesToShow: 3 } }
+        ]
+     });
+     
+      $('.timeline-slider').slick({
+         slidesToShow: 1,
+         slidesToScroll: 1,
+         arrows: false,
+         asNavFor: '.timeline-nav',     
+         centerMode: true,     
+         cssEase: 'ease-in-out',
+         speed: 500,
+         responsive: [
+            { breakpoint: 768, settings: { centerPadding: '20px' } }
+        ]
+     });
+    });
+  </script>
+</body>
+</html>
