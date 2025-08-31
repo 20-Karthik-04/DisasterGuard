@@ -272,12 +272,4 @@ We welcome contributions! Please follow these steps:
 
 
 
-## 🙏 Acknowledgments
-
-- **Disaster Management Authorities** for providing domain expertise
-- **Open Source Community** for excellent NLP and ML libraries
-- **Social Media Platforms** for enabling real-time disaster monitoring
-- **Emergency Response Teams** who inspired this project's mission
-
-
 ---
