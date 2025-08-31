@@ -172,64 +172,6 @@ source venv/bin/activate
 python test_predictions.py
 ```
 
-## 📊 API Documentation
-
-### **Primary Analysis Endpoint**
-```http
-POST /analyze
-Content-Type: application/json
-
-Request:
-{
-  "tweet": "Massive earthquake hits Delhi, buildings collapsed, people trapped need urgent rescue"
-}
-
-Response:
-{
-  "tweet": "Original tweet text",
-  "is_disaster": 1,
-  "confidence": 0.97,
-  "location": "Delhi",
-  "all_locations": ["Delhi"],
-  "category": "Earthquake",
-  "category_confidence": 0.33,
-  "sentiment": "Urgent/Fearful",
-  "sentiment_score": -0.7,
-  "language_detected": "en",
-  "translated_text": null,
-  "context_strength": 6,
-  "has_keywords": true,
-  "keyword_count": 3,
-  "threshold_used": 0.25
-}
-```
-
-### **Batch Processing Endpoint**
-```http
-POST /api/predict/batch
-Content-Type: application/json
-
-Request:
-{
-  "tweets": [
-    "Earthquake in Delhi, buildings shaking",
-    "Great movie, loved it!",
-    "Flood warning for Mumbai issued"
-  ]
-}
-
-Response:
-{
-  "results": [
-    {
-      "index": 0,
-      "tweet": "Earthquake in Delhi, buildings shaking",
-      "result": { /* Complete analysis result */ }
-    }
-  ]
-}
-```
-
 ## 📁 Project Structure
 
 ```
@@ -265,16 +207,6 @@ DisasterGuard/
 └── 🚫 .gitignore                  # Git ignore rules
 ```
 
-## 📈 Performance Metrics
-
-- **Disaster Detection Accuracy**: 46.7% (with ongoing improvements)
-- **False Positive Rate**: <5% (excellent filtering of non-disasters)
-- **Location Extraction**: >90% accuracy for Indian locations
-- **Multi-language Support**: 12+ languages including Hindi, Bengali, Tamil
-- **Response Time**: <2 seconds per tweet analysis
-- **Batch Processing**: Up to 100 tweets per request
-- **Context Recognition**: 20+ contextual indicators for disaster validation
-
 ## 🔄 Data Flow Pipeline
 
 1. **Input Processing**: Tweet text received via REST API
@@ -287,27 +219,6 @@ DisasterGuard/
 8. **Location Extraction**: NER and pattern matching for geographic entities
 9. **Sentiment Analysis**: VADER sentiment with disaster-specific categories
 10. **Response Generation**: Comprehensive JSON result with all metadata
-
-## 🧪 Testing & Quality Assurance
-
-### **Test Coverage**
-- ✅ **Real Disaster Scenarios**: 8 test cases covering earthquakes, floods, cyclones
-- ✅ **Multi-language Inputs**: Hindi and regional language validation
-- ✅ **False Positive Cases**: 5 test cases for metaphorical usage
-- ✅ **Edge Cases**: Location-only tweets, short text, empty inputs
-- ✅ **Sentiment Validation**: Emergency sentiment classification testing
-
-### **Quality Metrics**
-```bash
-# Run comprehensive test suite
-python test_predictions.py
-
-# Expected output:
-📈 Overall Results:
-   Correct Disaster Predictions: 7/15
-   Accuracy: 46.7%
-   False Positive Rate: 0%
-```
 
 ## 🌐 Deployment
 
@@ -359,16 +270,7 @@ We welcome contributions! Please follow these steps:
 6. **Push to branch**: `git push origin feature/amazing-feature`
 7. **Submit a Pull Request** with detailed description
 
-### **Development Guidelines**
-- Follow PEP 8 for Python code style
-- Add comprehensive docstrings and comments
-- Include unit tests for new features
-- Update documentation for API changes
-- Ensure backward compatibility
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
@@ -377,14 +279,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Social Media Platforms** for enabling real-time disaster monitoring
 - **Emergency Response Teams** who inspired this project's mission
 
-## 📞 Support
-
-For questions, issues, or contributions:
-- 🐛 **Issues**: [GitHub Issues](https://github.com/20-Karthik-04/DisasterGuard/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/20-Karthik-04/DisasterGuard/discussions)
 
 ---
-
-**Built with ❤️ for disaster management and emergency response**
-
-*Utilizing state-of-the-art NLP and ML techniques for real-world impact*
