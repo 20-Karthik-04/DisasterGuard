@@ -3,7 +3,6 @@
 [![Python](https://img.shields.io/badge/Python-3.11.9-blue.svg)](https://python.org)
 [![Node.js](https://img.shields.io/badge/Node.js-16+-green.svg)](https://nodejs.org)
 [![Flask](https://img.shields.io/badge/Flask-3.0.3-red.svg)](https://flask.palletsprojects.com)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Deployment](https://img.shields.io/badge/Deployed-Render-purple.svg)](https://render.com)
 
 DisasterGuard is an intelligent disaster detection and analysis system that uses machine learning and natural language processing to identify and classify disaster-related content from social media posts in real-time. The system provides comprehensive analysis including disaster classification, location extraction, sentiment analysis, and multi-language support.
